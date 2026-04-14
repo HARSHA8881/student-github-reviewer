@@ -7,8 +7,16 @@ from .state import ReviewState
 
 load_dotenv()
 
-# Set up the Groq AI brain using Llama 3.1
-llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.7)
+llm = None
+
+def get_llm() -> ChatGroq:
+    global llm
+    if llm is None:
+        groq_api_key = os.getenv("GROQ_API_KEY")
+        if not groq_api_key:
+            raise RuntimeError("GROQ_API_KEY is required to generate mentor feedback.")
+        llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.7)
+    return llm
 
 def extract_github_data(state: ReviewState):
     username = state["username"]
@@ -45,5 +53,5 @@ def code_mentor_review(state: ReviewState):
     use,
     and suggest 1 or 2 actionable improvements (like adding documentation or tests).
     """
-    response = llm.invoke([HumanMessage(content=prompt)])
+    response = get_llm().invoke([HumanMessage(content=prompt)])
     return {"feedback": response.content}
